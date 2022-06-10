@@ -180,8 +180,6 @@ names(NRRLPfEvolGrowth)
 Pf_all_fit<-SummarizeGrowthByPlate(NRRLPfEvolGrowth, plot_fit=TRUE, plot_file="NRRL_Pf_Evol_Growth_Plots.pdf")
 output_file_name<-"NRRL_Pf_Evol_Growth_parameters.txt"
 write.table(Pf_all_fit, file = output_file_name, quote = FALSE, sep = "\t", row.names = FALSE)
-#save.image("NRRLPfEvolGrowth.RData")
-#savehistory("NRRLPfEvolGrowth.Rhistory")
 
 PFlogistic<-read.table("NRRL_Pf_Evol_Growth_parameters.txt", header=TRUE)
 PFlogistic[PFlogistic=="A1.5"]<-"PM.A1.5"
@@ -1104,7 +1102,7 @@ wilcox.test(NRRLsspInvade$logCount2[NRRLsspInvade$Sp1=="PM.I2.5" & NRRLsspInvade
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####### Figure SX
-####### And the in vitro data. Loading a data frame of mean and SD from 3-4 reps
+####### And the in vitro data from 3-4 reps
 ####### plus the higher two AA concentration conditions from density-dep vs PF 
 # we clearly have one run of CG that's acting out (run 3, 8/3/2021) 
 # this run did start with about 100X lower GC than AA; will exclude on that basis 
