@@ -35,9 +35,9 @@ pCGkill<-CGkill %>%
         legend.text=element_text(size=14),
         legend.title=element_blank(),
         legend.position = c(0.2,0.25)) +
-  labs(title=expression(italic("C. gleum Mortality")), y="Survival", x="Day")
+  labs(title=expression(italic(C.~gleum)~Induced~Mortality), y="Survival", x="Day")
 pCGkill
-ggsave("CGkill.png", height = 4, width=5, units="in")
+ggsave("FigS1_CGkill.jpg", height = 4, width=5, units="in")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,6 +74,7 @@ pPCAM<-pcaM.top2 %>%
         plot.title=element_text(hjust=0.5, size=12)) + 
   labs(title="", y="PC2 (27.08%)", x="PC1 (24.57%)")
 pPCAM
+ggsave("Featured Image.jpg", width=6, height=3.5, units="in", dpi=400)
 
 # Stacked bar plots of multispecies worm data
 fAA<-Multi$AA/Multi$Total 
@@ -161,7 +162,7 @@ pPCAgap<-plot_grid(pPCAM, pStackAI9, labels=c("A","B"), ncol=2, rel_widths=c(2,1
 #pPCAgap
 plot_grid(pPCAgap, pgrid_stackbars, ncol=1, rel_heights = c(1.5,3))
 #plot_grid(pPCAgap, pStack2, pStack5, pStack6, pStack9, ncol=1, labels="AUTO", rel_heights=c(1,1,1,1,2))
-ggsave("Fig1_pMultiWormPF_PCA_Stackbar.png", width=6.5, height=8, units="in", dpi=300)
+ggsave("Fig1_pMultiWormPF_PCA_Stackbar.jpg", width=6.5, height=8, units="in", dpi=400)
 
 #################################################################################
 ################################################################################
@@ -180,8 +181,6 @@ names(NRRLPfEvolGrowth)
 Pf_all_fit<-SummarizeGrowthByPlate(NRRLPfEvolGrowth, plot_fit=TRUE, plot_file="NRRL_Pf_Evol_Growth_Plots.pdf")
 output_file_name<-"NRRL_Pf_Evol_Growth_parameters.txt"
 write.table(Pf_all_fit, file = output_file_name, quote = FALSE, sep = "\t", row.names = FALSE)
-#save.image("NRRLPfEvolGrowth.RData")
-#savehistory("NRRLPfEvolGrowth.Rhistory")
 
 PFlogistic<-read.table("NRRL_Pf_Evol_Growth_parameters.txt", header=TRUE)
 PFlogistic[PFlogistic=="A1.5"]<-"PM.A1.5"
@@ -420,7 +419,6 @@ pLogisticParams<-plot_grid(pMuMax.AA, pMuMax.CG, pMuMax.MO, pMuMax.PM,
           plogistic.K.AA, plogistic.K.CG, plogistic.K.MO, plogistic.K.PM, 
           ncol=4, nrow=2, labels="AUTO", align = "h")
 pLogisticParams
-#ggsave("pFigS2_NRRL_logistic_params.png", width=18, height=8, units="in")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Motility data: MO single colony picks, diameter at 24 and 48h on swim plates
@@ -441,7 +439,7 @@ pMOmotility<-MOmotility %>%
   facet_wrap(~ID, ncol=14)
 pMOmotility
 plot_grid(pLogisticParams, pMOmotility, ncol=1, labels=c("", "I"), rel_heights=c(2,1))
-ggsave("pFigS2_NRRL_logistic_params_motility.png", width=18, height=12, units="in")
+ggsave("FigS2_NRRL_logistic_params_motility.png", width=18, height=12, units="in", dpi=400)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -528,8 +526,9 @@ pNRRLssp.PM<-subset(NRRLssp, Species=="PM") %>%
   stat_compare_means(aes(label=..p.adj..), ref.group = "PM.I2.5", method.args=list(p.adjust.method="bonferroni"), label.y=5.8) + 
   stat_compare_means(label.y = 0.5, label.x=1.1) 
 #pNRRLssp.PM
+
 plot_grid(pNRRLssp.AA, pNRRLssp.CG, pNRRLssp.MO, pNRRLssp.PM, nrow=2, ncol=2, align="h", labels="AUTO")
-ggsave("Fig2_pNRRLssp.png", width=8, height=8, units="in")
+ggsave("Fig2_pNRRLssp.jpg", width=8, height=8, units="in", dpi=400)
 
 wilcox.test(NRRLssp$logCFU[NRRLssp$Strain=="PM.A1.5"], NRRLssp$logCFU[NRRLssp$Strain=="PM.A1.9"])
 wilcox.test(NRRLssp$logCFU[NRRLssp$Strain=="PM.I2.5"], NRRLssp$logCFU[NRRLssp$Strain=="PM.I2.9"])
@@ -708,12 +707,13 @@ pNRRLcommInvade.N<-subset(NRRLcommInvade03, Community=="N") %>%
   labs(title="Ancestor", y=expression(log[10](AA/Worm)), x="")+
   stat_compare_means(label.y = 4.8) 
 #pNRRLcommInvade.N
+
 bottom_grid<-plot_grid(pNRRLcommInvade.A1, pNRRLcommInvade.I2, pNRRLcommInvade.N, ncol=3)
 top_grid<-plot_grid(pStackInvade.A1.9.AA0, pStackInvade.I2.9.AA0, pStackInvade.N.AA0,
           pStackInvade.A1.9.AA3, pStackInvade.I2.9.AA3, pStackInvade.N.AA3,
           ncol=3, nrow=2, rel_widths = c(1, 1, 1.4))
 plot_grid(top_grid, bottom_grid, ncol=1, rel_heights = c(1.8,1), labels="AUTO")
-ggsave("Fig3_pStackCommunityInvadePM_AB.png", width=10, height=12, units="in")
+ggsave("Fig3_pStackCommunityInvadePM_AB.jpg", width=10, height=12, units="in", dpi=400)
 
 #~~~~~~~~~~~~~    Statistical tests       ~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~ for community invasion data ~~~~~~~~~~~~~~~~~~~~~~
@@ -908,7 +908,7 @@ plot_grid(pNRRLcommInvadeBars.A1.0, pNRRLcommInvadeBars.I2.0, pNRRLcommInvadeBar
           pNRRLcommInvadeBars.A1.2, NULL, pNRRLcommInvadeBars.N.2,
           pNRRLcommInvadeBars.A1.3, pNRRLcommInvadeBars.I2.3, pNRRLcommInvadeBars.N.3,
           ncol=3, nrow=4)
-ggsave("FigS4_pNRRLcommInvadeBarPlotsRainbowPM.png", width=8, height=10, units="in")
+ggsave("FigS4_pNRRLcommInvadeBarPlotsRainbowPM.jpg", width=8, height=10, units="in", dpi=400)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1035,12 +1035,12 @@ pFig4B_NRRLsspInvade_vs_AA
 
 #ggsave("psspN2Invade_worms_A1I2.png", width=9, height=9, units="in", dpi=300)
 
-#~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~ Save Figure 4
 plot_grid(pFig4A_NRRLsspInvade_vs_SSP, pFig4B_NRRLsspInvade_vs_AA, ncol=1, rel_heights = c(1,1.2), labels = "AUTO")
-ggsave("Fig4_NRRL_ssp_invade_worms.png", width=10, height=10, units="in")
+ggsave("Fig4_NRRL_ssp_invade_worms.jpg", width=10, height=10, units="in", dpi=400)
 
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # and now some comparisons
 kruskal.test(logCount2~Invader, data=NRRLsspInvade)
 #Kruskal-Wallis chi-squared = 9.6855, df = 1, p-value = 0.001857
@@ -1103,8 +1103,8 @@ wilcox.test(NRRLsspInvade$logCount2[NRRLsspInvade$Sp1=="PM.I2.5" & NRRLsspInvade
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-####### Figure SX
-####### And the in vitro data. Loading a data frame of mean and SD from 3-4 reps
+####### Figure S5
+####### And the in vitro data from 3-4 reps
 ####### plus the higher two AA concentration conditions from density-dep vs PF 
 # we clearly have one run of CG that's acting out (run 3, 8/3/2021) 
 # this run did start with about 100X lower GC than AA; will exclude on that basis 
@@ -1218,9 +1218,10 @@ pNRRL_AA_CG_InVitroTime.N2<-NRRL_AA_CG_InVitroTime %>%
   labs(title="In Vitro, AA vs. CG", y="CG log10(CFU/Plate)", x="Week")
 pNRRL_AA_CG_InVitroTime.N2
 pInVitroBottom<-plot_grid(pNRRL_AA_CG_InVitroTime.P1, pNRRL_AA_CG_InVitroTime.N1, pNRRL_AA_CG_InVitroTime.N2, align="h", ncol=3, labels=c("E","F","G"))
+
 pInVitroAll<-plot_grid(pInVitroTop, pInVitroBottom, ncol=1, rel_heights = c(2,1))
 pInVitroAll
-#ggsave("pInVitroAA_ALL.png", width=10, height=14, units="in")
+ggsave("FigS5_pInVitroAA_ALL.jpg", width=10, height=14, units="in", dpi=400)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
