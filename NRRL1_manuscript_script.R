@@ -439,7 +439,7 @@ pMOmotility<-MOmotility %>%
   facet_wrap(~ID, ncol=14)
 pMOmotility
 plot_grid(pLogisticParams, pMOmotility, ncol=1, labels=c("", "I"), rel_heights=c(2,1))
-ggsave("FigS2_NRRL_logistic_params_motility.png", width=18, height=12, units="in", dpi=400)
+ggsave("FigS2_NRRL_logistic_params_motility.jpg", width=18, height=12, units="in", dpi=400)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
