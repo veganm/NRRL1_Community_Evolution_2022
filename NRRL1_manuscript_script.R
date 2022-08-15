@@ -752,6 +752,62 @@ median(NRRLssp$CFU[NRRLssp$Strain=="PM.A1.9"]) #4000
 median(NRRLssp$CFU[NRRLssp$Strain=="PM.I2.9"]) #3300
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 2022-08: Invasion in PM-swapped communities
+# "A1.PM.I2", for example, is made of community A1 strains, except has PM from community I2.9
+
+NRRLcommInvadeSwap<-read.table("NRRLcommInvadeSwap.txt", header=TRUE)
+NRRLcommInvadeSwap<-as_tibble(NRRLcommInvadeSwap)
+NRRLcommInvadeSwap$Condition<-as.factor(NRRLcommInvadeSwap$Condition)
+NRRLcommInvadeSwap$Invader<-as.factor(NRRLcommInvadeSwap$Invader)
+names(NRRLcommInvadeSwap)
+i<-dim(NRRLcommInvadeSwap)[1]
+
+# assemble a data frame for stacked bars
+NRRLcommInvadeStackSwap<-data.frame(Condition= rep(NRRLcommInvadeSwap$Condition, 4),
+                                Comm=rep(NRRLcommInvadeSwap$Community, 4), 
+                                Invader=rep(NRRLcommInvadeSwap$Invader, 4), 
+                                bact=as.factor(c(rep("AA",i), rep("MO",i), rep("CG",i), rep("PM",i))),
+                                values=c(NRRLcommInvadeSwap$fAA,NRRLcommInvadeSwap$fMO,NRRLcommInvadeSwap$fCG,NRRLcommInvadeSwap$fPM)) 
+idx<-rep(1:i)
+NRRLcommInvadeStackSwap$ID<-rep(idx,4)
+
+top_grid_swap<-NRRLcommInvadeStackSwap %>%
+  ggplot(aes(fill=bact, y=values, x=ID))+ 
+  geom_bar(stat="identity") + 
+  scale_fill_manual(values=c('red4', 'gold', 'yellowgreen', 'blue'))  + 
+  ylab("Freq") + xlab("") + 
+  theme(axis.text=element_text(size=14), 
+        axis.title=element_text(size=14, face="bold"), 
+        axis.text.x = element_blank(),
+        plot.title=element_text(hjust=0.5, size=14),
+        legend.text=element_text(size=14),
+        legend.position="right",
+        legend.title = element_blank()) +
+  facet_wrap(vars(Comm, Invader), scales="free_x", ncol=4)
+  #labs(title="A1.9 vs. AA.0")
+top_grid_swap
+
+bottom_grid_swap<-NRRLcommInvadeSwap %>% 
+  mutate(logAA=log10(nAA+1)) %>%
+  ggplot(aes(x=Invader, y=logAA, color=Invader))+
+  geom_boxplot(fill=NA)+
+  ylim(-0.1,5)+
+  geom_jitter(size=3, shape=16, position=position_jitter(0.05)) + theme_classic()+
+  theme(axis.text=element_text(size=14), 
+        #        axis.text.x = element_blank(),
+        axis.title=element_text(size=14, face="bold"), 
+        plot.title=element_text(hjust=0.5, size=14),
+        legend.text=element_text(size=14),
+        legend.title=element_blank(),
+        legend.position = "none") +
+  labs(y=expression(log[10](AA/Worm)), x="")+
+  facet_wrap(vars(Community), ncol=4) +
+  stat_compare_means(label.y = 4.8)
+bottom_grid_swap
+plot_grid(top_grid_swap, bottom_grid_swap, ncol=1, rel_heights = c(1.8,1), labels="AUTO")
+ggsave("FigSX_CommunityInvasionSwap.png", width=14, height=10, units="in", dpi=400)
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~  FIGURE S4 COMMUNITY INVASION BARPLOTS
 ### and some pretty rainbow barplots for the supplementary figure
