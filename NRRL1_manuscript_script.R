@@ -2,7 +2,6 @@
 # Script for analysis and plotting of manuscript data
 
 library(tidyverse)
-library(ggplot2) 
 library(cowplot) 
 library(grid)
 library(gridExtra)
@@ -783,30 +782,80 @@ top_grid_swap<-NRRLcommInvadeStackSwap %>%
         plot.title=element_text(hjust=0.5, size=14),
         legend.text=element_text(size=14),
         legend.position="right",
-        legend.title = element_blank()) +
+        legend.title = element_blank(),
+        strip.text = element_text(size = 14)) +
   facet_wrap(vars(Comm, Invader), scales="free_x", ncol=4)
-  #labs(title="A1.9 vs. AA.0")
 top_grid_swap
 
 bottom_grid_swap<-NRRLcommInvadeSwap %>% 
   mutate(logAA=log10(nAA+1)) %>%
+  #mutate(nAAup = nAA + 1) %>%
   ggplot(aes(x=Invader, y=logAA, color=Invader))+
   geom_boxplot(fill=NA)+
   ylim(-0.1,5)+
-  geom_jitter(size=3, shape=16, position=position_jitter(0.05)) + theme_classic()+
+  #scale_y_log10() +
+  geom_jitter(size=3, shape=16, position=position_jitter(0.05)) + 
+  theme_classic()+
   theme(axis.text=element_text(size=14), 
         #        axis.text.x = element_blank(),
         axis.title=element_text(size=14, face="bold"), 
         plot.title=element_text(hjust=0.5, size=14),
         legend.text=element_text(size=14),
         legend.title=element_blank(),
-        legend.position = "none") +
+        legend.position = "none",
+        strip.text = element_text(size = 14)) +
   labs(y=expression(log[10](AA/Worm)), x="")+
   facet_wrap(vars(Community), ncol=4) +
   stat_compare_means(label.y = 4.8)
 bottom_grid_swap
 plot_grid(top_grid_swap, bottom_grid_swap, ncol=1, rel_heights = c(1.8,1), labels="AUTO")
 ggsave("FigSX_CommunityInvasionSwap.png", width=14, height=10, units="in", dpi=400)
+
+# compare all groups using total AA as the variable
+kruskal.test(nAA~Condition, data=NRRLcommInvadeSwap) # Kruskal-Wallis chi-squared = 6.6241, df = 7, p-value = 0.469
+kruskal.test(nAA~Community, data=NRRLcommInvadeSwap) # Kruskal-Wallis chi-squared = 4.3052, df = 3, p-value = 0.2303
+
+# Summary stats
+NRRLcommInvadeSwap %>%
+  group_by(Condition) %>%
+  summarize(medianAA = median(nAA),
+            meanAA = mean(nAA),
+            sdAA = sd(nAA))
+
+#   Condition medianAA meanAA  sdAA
+#<fct>        <dbl>  <dbl> <dbl>
+#  1 A1.AA0         120   623. 1146.
+#  2 A1.AA3          40   374   801.
+#  3 AI.AA0         140  1076. 1741.
+#  4 AI.AA3          80  1310. 2667.
+#  5 I2.AA0         220  1270  1932.
+#  6 I2.AA3         260   623. 1166.
+#  7 IA.AA0         180   892. 1930.
+#  8 IA.AA3         400   763. 1187.
+
+NRRLcommInvadeSwap %>%
+  group_by(Invader) %>%
+  summarize(medianAA = median(nAA),
+            meanAA = mean(nAA),
+            sdAA = sd(nAA))
+
+#   Invader medianAA meanAA  sdAA
+# <fct>      <dbl>  <dbl> <dbl>
+#  1 AA.0         180   984. 1734.
+#  2 AA.3         200   883. 1805.
+
+NRRLcommInvadeSwap %>%
+  group_by(Community) %>%
+  summarize(medianAA = median(nAA),
+            meanAA = mean(nAA),
+            sdAA = sd(nAA))
+
+#   Community medianAA meanAA  sdAA
+# <chr>        <dbl>  <dbl> <dbl>
+#  1 A1.9            50   510   989.
+#  2 A1.PM.I2        80  1185. 2207.
+#  3 I2.9           220   947. 1595.
+#  4 I2.PM.A1       360   814. 1511.
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~  FIGURE S4 COMMUNITY INVASION BARPLOTS
