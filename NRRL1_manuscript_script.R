@@ -1,22 +1,14 @@
 # NRRL1 Communty-based microbial evolution
 # Script for analysis and plotting of manuscript data
 
-library(tidyverse)
-library(cowplot) 
-library(grid)
-library(gridExtra)
-library(ggpubr)
-library(vegan) 
-library(FactoMineR) 
-library(growthcurver)
-library(growthrates)
+pacman::p_load(tidyverse, cowplot, grid, gridExtra, ggpubr, vegan, FactoMineR, growthcurver, growthrates, Rfit)
 
 load("NRRL1Evolution.Rdata")
 
 save.image("NRRL1Evolution.Rdata")
 
 #########################################################
-##### Figure S1 CG Pathogen Killing
+##### Figure S2 CG Pathogen Killing
 
 CGkill<-read.table("NRRLCGkill.txt", header=TRUE)
 CGkill$Strain<-as.factor(CGkill$Strain)
@@ -36,7 +28,7 @@ pCGkill<-CGkill %>%
         legend.position = c(0.2,0.25)) +
   labs(title=expression(italic(C.~gleum)~Induced~Mortality), y="Survival", x="Day")
 pCGkill
-ggsave("FigS1_CGkill.jpg", height = 4, width=5, units="in")
+ggsave("FigS2_CGkill.jpg", height = 4, width=5, units="in")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,16 +158,18 @@ ggsave("Fig1_pMultiWormPF_PCA_Stackbar.jpg", width=6.5, height=8, units="in", dp
 #################################################################################
 ################################################################################
 ################################################### 
-###    FIGURE S2
+###    FIGURE S3
 ###   In Vitro Phenotyping
 ### Growth parameters from growthcurver and growthrates
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# FIGURE TEXT SIZE PARAMETER
+xTextSize<-12
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 NRRLPfEvolGrowth<-read.table("NRRLPfEvolGrowth.txt", header=TRUE, stringsAsFactors = FALSE)
 names(NRRLPfEvolGrowth)
-
-#A2_fit<-SummarizeGrowth(NRRLPfEvolGrowth$time, NRRLPfEvolGrowth$A2)
-#A2_fit
-#plot(A2_fit)
 
 Pf_all_fit<-SummarizeGrowthByPlate(NRRLPfEvolGrowth, plot_fit=TRUE, plot_file="NRRL_Pf_Evol_Growth_Plots.pdf")
 output_file_name<-"NRRL_Pf_Evol_Growth_parameters.txt"
@@ -193,57 +187,6 @@ unique(PFlogistic$Strain)
 
 PFlogistic$Strain<-as.factor(PFlogistic$Strain)
 PFlogistic<-as_tibble(PFlogistic)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# growthcurver doesn't fit a lag phase
-# and so there is a lot of run to run variability
-# particularly in max growth rate inferred
-# and so instead we will use growthrates
-# to fit splines and estimate "mumax"
-
-# here is an object with all the growth curve data in long array
-NRRL1growth.long<-read.table("NRRL1_growth_long.txt", header=TRUE)
-NRRL1growth.splitted<-multisplit(NRRL1growth.long, c("strain", "replicate"))
-dim(NRRL1growth.splitted[[1]])
-unique(NRRL1growth.splitted[[1]]$replicate)
-# this is AA.0 rep 1- so far so good
-# [[2]] is AA.S1 rep 1, and so on
-fit.spline.AA0.1<-fit_spline(NRRL1growth.splitted[[1]]$time, NRRL1growth.splitted[[1]]$value)
-summary(fit.spline.AA0.1)
-coef(fit.spline.AA0.1)
-par(mfrow=c(2,1))
-plot(fit.spline.AA0.1)
-plot(fit.spline.AA0.1, log="y")
-
-#~~~~~~ now all the splines at once?
-NRRL1growth.many.splines.fit<-all_splines(value~time | strain + replicate, data=NRRL1growth.long, spar=0.5)
-NRRL1growth.many.splines.coef<-coef(NRRL1growth.many.splines.fit)
-
-row.names(NRRL1growth.many.splines.coef)
-NRRL1.growth.names<-str_split_fixed(row.names(NRRL1growth.many.splines.coef), ":", n=2)
-#NRRL1.growth.names[,1]
-NRRL1.growth.mumax<-tibble(strain=NRRL1.growth.names[,1], 
-                           replicate=NRRL1.growth.names[,2], 
-                           mumax=as.numeric(NRRL1growth.many.splines.coef[,2]))
-
-#whoops we will probably want species ID so we can separate
-NRRL1.growth.mumax$species<-substr(NRRL1.growth.mumax$strain,1,2)
-
-#~~~~~~~~~~~~ plotting out the parameters
-xTextSize=12
-
-pPF.logistic.K<-PFlogistic %>%
-  ggplot(aes(x=Strain, y=k, color=Strain))+
-  geom_boxplot(fill=NA)+
-  geom_point(size=3) + theme_classic()+
-  theme(axis.text=element_text(size=14), 
-        axis.title=element_text(size=14, face="bold"), 
-        plot.title=element_text(hjust=0.5, size=14),
-        legend.text=element_text(size=14),
-        legend.title=element_blank(),
-        legend.position = "none") +
-  labs(title="", y="K (OD600)", x="")
-pPF.logistic.K
 
 #~~~~~ add another plate reader run
 #~~~~~ 5/25/2022 NGM growth curves...
@@ -276,8 +219,42 @@ names(NRRL.logistic)
 unique(NRRL.logistic$Strain)
 NRRL.logistic$Species<-substr(NRRL.logistic$Strain, start=1, stop=2)
 
-xTextSize<-12
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# growthcurver doesn't fit a lag phase and so there is a lot of run to run variability
+# particularly in max growth rate inferred
+# and so instead we will use growthrates to fit splines and estimate "mumax"
+
+# here is an object with all the growth curve data in long array
+NRRL1growth.long<-read.table("NRRL1_growth_long.txt", header=TRUE)
+NRRL1growth.splitted<-multisplit(NRRL1growth.long, c("strain", "replicate"))
+dim(NRRL1growth.splitted[[1]])
+unique(NRRL1growth.splitted[[1]]$replicate)
+# this is AA.0 rep 1- so far so good
+# [[2]] is AA.S1 rep 1, and so on
+fit.spline.AA0.1<-fit_spline(NRRL1growth.splitted[[1]]$time, NRRL1growth.splitted[[1]]$value)
+summary(fit.spline.AA0.1)
+coef(fit.spline.AA0.1)
+par(mfrow=c(2,1))
+plot(fit.spline.AA0.1)
+plot(fit.spline.AA0.1, log="y")
+
+#~~~~~~ now all the splines at once
+NRRL1growth.many.splines.fit<-all_splines(value~time | strain + replicate, data=NRRL1growth.long, spar=0.5)
+NRRL1growth.many.splines.coef<-coef(NRRL1growth.many.splines.fit)
+
+row.names(NRRL1growth.many.splines.coef)
+NRRL1.growth.names<-str_split_fixed(row.names(NRRL1growth.many.splines.coef), ":", n=2)
+#NRRL1.growth.names[,1]
+NRRL1.growth.mumax<-tibble(strain=NRRL1.growth.names[,1], 
+                           replicate=NRRL1.growth.names[,2], 
+                           mumax=as.numeric(NRRL1growth.many.splines.coef[,2]))
+
+#whoops we will probably want species ID so we can separate
+NRRL1.growth.mumax$species<-substr(NRRL1.growth.mumax$strain,1,2)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Plot out growth rate parameter estimates 
 pMuMax.AA<-subset(NRRL1.growth.mumax, species=="AA") %>%
   ggplot(aes(x=strain, y=mumax, color=strain))+
   geom_boxplot(fill=NA)+
@@ -438,7 +415,7 @@ pMOmotility<-MOmotility %>%
   facet_wrap(~ID, ncol=14)
 pMOmotility
 plot_grid(pLogisticParams, pMOmotility, ncol=1, labels=c("", "I"), rel_heights=c(2,1))
-ggsave("FigS2_NRRL_logistic_params_motility.jpg", width=18, height=12, units="in", dpi=400)
+ggsave("FigS3_NRRL_logistic_params_motility.jpg", width=18, height=12, units="in", dpi=400)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -457,6 +434,8 @@ pNRRLssp.CG<-subset(NRRLssp, Species=="CG") %>%
   geom_violin(fill=NA)+
   geom_jitter(size=2, width=0.1) + 
   geom_hline(yintercept = log10(40), linetype="dashed", color="gray")+
+  stat_summary(fun = "median", geom = "point", 
+               shape = 15, size = 3, color = "black")+
   ylim(-0.1,6.5) + theme_classic() +
   theme(axis.text=element_text(size=12), 
         axis.title=element_text(size=14, face="bold"), 
@@ -475,6 +454,8 @@ pNRRLssp.MO<-subset(NRRLssp, Species=="MO") %>%
   geom_violin(fill=NA)+
   geom_jitter(size=2, width=0.1) + 
   geom_hline(yintercept = log10(40), linetype="dashed", color="gray")+
+  stat_summary(fun = "median", geom = "point", 
+               shape = 15, size = 3, color = "black")+
   ylim(-0.1,6.5) + theme_classic() +
   theme(axis.text=element_text(size=12), 
         axis.title=element_text(size=14, face="bold"), 
@@ -493,6 +474,8 @@ pNRRLssp.AA<-subset(NRRLssp, Species=="AA") %>%
   geom_violin(fill=NA)+
   geom_jitter(size=2, width=0.1) + 
   geom_hline(yintercept = log10(40), linetype="dashed", color="gray")+
+  stat_summary(fun = "median", geom = "point", 
+               shape = 15, size = 3, color = "black")+
   ylim(-0.1,6.5) + theme_classic() +
   theme(axis.text=element_text(size=12), 
         axis.title=element_text(size=14, face="bold"), 
@@ -511,6 +494,8 @@ pNRRLssp.PM<-subset(NRRLssp, Species=="PM") %>%
   geom_violin(fill=NA)+
   geom_jitter(size=2, width=0.1) + 
   geom_hline(yintercept = log10(40), linetype="dashed", color="gray")+
+  stat_summary(fun = "median", geom = "point", 
+               shape = 15, size = 3, color = "black")+
   ylim(-0.1,6.5) + theme_classic() +
   theme(axis.text=element_text(size=12), 
         axis.title=element_text(size=14, face="bold"), 
@@ -524,7 +509,7 @@ pNRRLssp.PM<-subset(NRRLssp, Species=="PM") %>%
   stat_compare_means(aes(label=..p.adj..), ref.group = "PM.A1.5",method.args=list(p.adjust.method="bonferroni"), label.y=6.4) + 
   stat_compare_means(aes(label=..p.adj..), ref.group = "PM.I2.5", method.args=list(p.adjust.method="bonferroni"), label.y=5.8) + 
   stat_compare_means(label.y = 0.5, label.x=1.1) 
-#pNRRLssp.PM
+pNRRLssp.PM
 
 plot_grid(pNRRLssp.AA, pNRRLssp.CG, pNRRLssp.MO, pNRRLssp.PM, nrow=2, ncol=2, align="h", labels="AUTO")
 ggsave("Fig2_pNRRLssp.jpg", width=8, height=8, units="in", dpi=400)
@@ -751,115 +736,10 @@ median(NRRLssp$CFU[NRRLssp$Strain=="PM.A1.9"]) #4000
 median(NRRLssp$CFU[NRRLssp$Strain=="PM.I2.9"]) #3300
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 2022-08: Invasion in PM-swapped communities
-# "A1.PM.I2", for example, is made of community A1 strains, except has PM from community I2.9
-
-NRRLcommInvadeSwap<-read.table("NRRLcommInvadeSwap.txt", header=TRUE)
-NRRLcommInvadeSwap<-as_tibble(NRRLcommInvadeSwap)
-NRRLcommInvadeSwap$Condition<-as.factor(NRRLcommInvadeSwap$Condition)
-NRRLcommInvadeSwap$Invader<-as.factor(NRRLcommInvadeSwap$Invader)
-names(NRRLcommInvadeSwap)
-i<-dim(NRRLcommInvadeSwap)[1]
-
-# assemble a data frame for stacked bars
-NRRLcommInvadeStackSwap<-data.frame(Condition= rep(NRRLcommInvadeSwap$Condition, 4),
-                                Comm=rep(NRRLcommInvadeSwap$Community, 4), 
-                                Invader=rep(NRRLcommInvadeSwap$Invader, 4), 
-                                bact=as.factor(c(rep("AA",i), rep("MO",i), rep("CG",i), rep("PM",i))),
-                                values=c(NRRLcommInvadeSwap$fAA,NRRLcommInvadeSwap$fMO,NRRLcommInvadeSwap$fCG,NRRLcommInvadeSwap$fPM)) 
-idx<-rep(1:i)
-NRRLcommInvadeStackSwap$ID<-rep(idx,4)
-
-top_grid_swap<-NRRLcommInvadeStackSwap %>%
-  ggplot(aes(fill=bact, y=values, x=ID))+ 
-  geom_bar(stat="identity") + 
-  scale_fill_manual(values=c('red4', 'gold', 'yellowgreen', 'blue'))  + 
-  ylab("Freq") + xlab("") + 
-  theme(axis.text=element_text(size=14), 
-        axis.title=element_text(size=14, face="bold"), 
-        axis.text.x = element_blank(),
-        plot.title=element_text(hjust=0.5, size=14),
-        legend.text=element_text(size=14),
-        legend.position="right",
-        legend.title = element_blank(),
-        strip.text = element_text(size = 14)) +
-  facet_wrap(vars(Comm, Invader), scales="free_x", ncol=4)
-top_grid_swap
-
-bottom_grid_swap<-NRRLcommInvadeSwap %>% 
-  mutate(logAA=log10(nAA+1)) %>%
-  #mutate(nAAup = nAA + 1) %>%
-  ggplot(aes(x=Invader, y=logAA, color=Invader))+
-  geom_boxplot(fill=NA)+
-  ylim(-0.1,5)+
-  #scale_y_log10() +
-  geom_jitter(size=3, shape=16, position=position_jitter(0.05)) + 
-  theme_classic()+
-  theme(axis.text=element_text(size=14), 
-        #        axis.text.x = element_blank(),
-        axis.title=element_text(size=14, face="bold"), 
-        plot.title=element_text(hjust=0.5, size=14),
-        legend.text=element_text(size=14),
-        legend.title=element_blank(),
-        legend.position = "none",
-        strip.text = element_text(size = 14)) +
-  labs(y=expression(log[10](AA/Worm)), x="")+
-  facet_wrap(vars(Community), ncol=4) +
-  stat_compare_means(label.y = 4.8)
-bottom_grid_swap
-plot_grid(top_grid_swap, bottom_grid_swap, ncol=1, rel_heights = c(1.8,1), labels="AUTO")
-ggsave("FigSX_CommunityInvasionSwap.png", width=14, height=10, units="in", dpi=400)
-
-# compare all groups using total AA as the variable
-kruskal.test(nAA~Condition, data=NRRLcommInvadeSwap) # Kruskal-Wallis chi-squared = 6.6241, df = 7, p-value = 0.469
-kruskal.test(nAA~Community, data=NRRLcommInvadeSwap) # Kruskal-Wallis chi-squared = 4.3052, df = 3, p-value = 0.2303
-
-# Summary stats
-NRRLcommInvadeSwap %>%
-  group_by(Condition) %>%
-  summarize(medianAA = median(nAA),
-            meanAA = mean(nAA),
-            sdAA = sd(nAA))
-
-#   Condition medianAA meanAA  sdAA
-#<fct>        <dbl>  <dbl> <dbl>
-#  1 A1.AA0         120   623. 1146.
-#  2 A1.AA3          40   374   801.
-#  3 AI.AA0         140  1076. 1741.
-#  4 AI.AA3          80  1310. 2667.
-#  5 I2.AA0         220  1270  1932.
-#  6 I2.AA3         260   623. 1166.
-#  7 IA.AA0         180   892. 1930.
-#  8 IA.AA3         400   763. 1187.
-
-NRRLcommInvadeSwap %>%
-  group_by(Invader) %>%
-  summarize(medianAA = median(nAA),
-            meanAA = mean(nAA),
-            sdAA = sd(nAA))
-
-#   Invader medianAA meanAA  sdAA
-# <fct>      <dbl>  <dbl> <dbl>
-#  1 AA.0         180   984. 1734.
-#  2 AA.3         200   883. 1805.
-
-NRRLcommInvadeSwap %>%
-  group_by(Community) %>%
-  summarize(medianAA = median(nAA),
-            meanAA = mean(nAA),
-            sdAA = sd(nAA))
-
-#   Community medianAA meanAA  sdAA
-# <chr>        <dbl>  <dbl> <dbl>
-#  1 A1.9            50   510   989.
-#  2 A1.PM.I2        80  1185. 2207.
-#  3 I2.9           220   947. 1595.
-#  4 I2.PM.A1       360   814. 1511.
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~  FIGURE S4 COMMUNITY INVASION BARPLOTS
-### and some pretty rainbow barplots for the supplementary figure
+#~~~  FIGURE S5 COMMUNITY INVASION BARPLOTS
+#~~~  AND PM SWAPS     
+# Some pretty rainbow barplots for the supplementary figure
 # assemble the data frame
 NRRLcommInvadeBars<-data.frame(Condition= rep(NRRLcommInvade$Condition, 4),
                                 Comm=rep(NRRLcommInvade$Community, 4), Invader=rep(NRRLcommInvade$Invader, 4), 
@@ -1013,7 +893,158 @@ plot_grid(pNRRLcommInvadeBars.A1.0, pNRRLcommInvadeBars.I2.0, pNRRLcommInvadeBar
           pNRRLcommInvadeBars.A1.2, NULL, pNRRLcommInvadeBars.N.2,
           pNRRLcommInvadeBars.A1.3, pNRRLcommInvadeBars.I2.3, pNRRLcommInvadeBars.N.3,
           ncol=3, nrow=4)
-ggsave("FigS4_pNRRLcommInvadeBarPlotsRainbowPM.jpg", width=8, height=10, units="in", dpi=400)
+#ggsave("FigS4_pNRRLcommInvadeBarPlotsRainbowPM.jpg", width=8, height=10, units="in", dpi=400)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 2022-08: Invasion in PM-swapped communities
+# "A1.PM.I2", for example, is made of community A1 strains, except has PM from community I2.9
+
+NRRLcommInvadeSwap<-read.table("NRRLcommInvadeSwap.txt", header=TRUE)
+NRRLcommInvadeSwap<-as_tibble(NRRLcommInvadeSwap)
+NRRLcommInvadeSwap$Condition<-as.factor(NRRLcommInvadeSwap$Condition)
+NRRLcommInvadeSwap$Invader<-as.factor(NRRLcommInvadeSwap$Invader)
+names(NRRLcommInvadeSwap)
+i<-dim(NRRLcommInvadeSwap)[1]
+
+# assemble a data frame for stacked bars
+NRRLcommInvadeStackSwap<-data.frame(Condition= rep(NRRLcommInvadeSwap$Condition, 4),
+                                    Comm=rep(NRRLcommInvadeSwap$Community, 4), 
+                                    Invader=rep(NRRLcommInvadeSwap$Invader, 4), 
+                                    bact=as.factor(c(rep("AA",i), rep("MO",i), rep("CG",i), rep("PM",i))),
+                                    values=c(NRRLcommInvadeSwap$fAA,NRRLcommInvadeSwap$fMO,NRRLcommInvadeSwap$fCG,NRRLcommInvadeSwap$fPM)) 
+idx<-rep(1:i)
+NRRLcommInvadeStackSwap$ID<-rep(idx,4)
+
+top_grid_swap<-NRRLcommInvadeStackSwap %>%
+  ggplot(aes(fill=bact, y=values, x=ID))+ 
+  geom_bar(stat="identity") + 
+  scale_fill_manual(values=c('red4', 'gold', 'yellowgreen', 'blue'))  + 
+  ylab("Freq") + xlab("") + 
+  theme(axis.text=element_text(size=14), 
+        axis.title=element_text(size=14, face="bold"), 
+        axis.text.x = element_blank(),
+        plot.title=element_text(hjust=0.5, size=14),
+        legend.text=element_text(size=14),
+        legend.position="right",
+        legend.title = element_blank(),
+        strip.text = element_text(size = 14)) +
+  facet_wrap(vars(Comm, Invader), scales="free_x", ncol=4)
+top_grid_swap
+
+# merge with Figure 3 data?
+names(NRRLcommInvade03)
+names(NRRLcommInvadeSwap)
+
+temp<-NRRLcommInvade03 %>%
+  filter(Community!="N") %>%
+  rename("nAA"="AA", "nMO"="MO", "nPM"="PM", "nCG"="CG")
+namelist<-names(temp)
+
+NRRLcommInvadeSwap_trunc<-NRRLcommInvadeSwap %>%
+  mutate(logAA=log10(nAA+1)) %>%
+  select(namelist)
+#names(NRRLcommInvadeSwap_trunc)
+
+NRRLcommInvadeMerged<-rbind(temp, NRRLcommInvadeSwap_trunc)
+rm(temp)
+
+bottom_grid_swap<-NRRLcommInvadeMerged %>% 
+  #mutate(logAA=log10(nAA+1)) %>%
+  ggplot(aes(x=Invader, y=logAA, color=Invader))+
+  geom_boxplot(fill=NA)+
+  ylim(-0.1,5)+
+  #scale_y_log10() +
+  geom_jitter(size=3, shape=16, position=position_jitter(0.05)) + 
+  theme_classic()+
+  theme(axis.text=element_text(size=14), 
+        #        axis.text.x = element_blank(),
+        axis.title=element_text(size=14, face="bold"), 
+        plot.title=element_text(hjust=0.5, size=14),
+        legend.text=element_text(size=14),
+        legend.title=element_blank(),
+        legend.position = "none",
+        strip.text = element_text(size = 14)) +
+  labs(y=expression(log[10](AA/Worm)), x="")+
+  facet_wrap(vars(Community), ncol=4) +
+  stat_compare_means(label.y = 4.8)
+bottom_grid_swap
+#plot_grid(top_grid_swap, bottom_grid_swap, ncol=1, rel_heights = c(1.8,1), labels="AUTO")
+#ggsave("FigSX_CommunityInvasionSwap.png", width=14, height=10, units="in", dpi=400)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Plot together
+# Supplementary Figure S5
+
+plot_invade_bars<-plot_grid(pNRRLcommInvadeBars.A1.0, pNRRLcommInvadeBars.I2.0, pNRRLcommInvadeBars.N.0, 
+          pNRRLcommInvadeBars.A1.1, NULL, pNRRLcommInvadeBars.N.1,
+          pNRRLcommInvadeBars.A1.2, NULL, pNRRLcommInvadeBars.N.2,
+          pNRRLcommInvadeBars.A1.3, pNRRLcommInvadeBars.I2.3, pNRRLcommInvadeBars.N.3,
+          ncol=3, nrow=4)
+
+plot_grid(plot_invade_bars, top_grid_swap, bottom_grid_swap, ncol=1, rel_heights = c(3, 1.8, 1), labels="AUTO")
+ggsave("FigS5_CommunityInvasion_Swap_Barplots.png", width=14, height=18, units="in", dpi=400)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# compare all groups using total AA as the variable
+kruskal.test(nAA~Condition, data=NRRLcommInvadeSwap) # Kruskal-Wallis chi-squared = 6.6241, df = 7, p-value = 0.469
+kruskal.test(nAA~Community, data=NRRLcommInvadeSwap) # Kruskal-Wallis chi-squared = 4.3052, df = 3, p-value = 0.2303
+
+NRRLcommInvadeMerged$Community<-as.factor(NRRLcommInvadeMerged$Community)
+raov(logAA~Community+Invader, data=NRRLcommInvadeMerged)
+# Robust ANOVA Table
+#DF      RD Mean RD       F p-value
+#Community          3 8.63756 2.87919 5.00607 0.00218
+#Invader            1 0.81350 0.81350 1.41445 0.23546
+#Community:Invader  3 0.83843 0.27948 0.48593 0.69236
+
+kruskal.test(nAA~Condition, data=NRRLcommInvadeMerged) # Kruskal-Wallis chi-squared = 21.003, df = 7, p-value = 0.003765
+kruskal.test(nAA~Community, data=NRRLcommInvadeMerged) # Kruskal-Wallis chi-squared = 18.177, df = 3, p-value = 0.0004043
+
+# Summary stats
+NRRLcommInvadeMerged %>%
+  group_by(Condition) %>%
+  summarize(medianAA = median(nAA),
+            meanAA = mean(nAA),
+            sdAA = sd(nAA))
+#Condition medianAA meanAA  sdAA
+#<fct>        <dbl>  <dbl> <dbl>
+#  1 A1.AA0          10   278.  683.
+#2 A1.AA3          10  1249. 2688.
+#3 I2.AA0         400  4130. 8807.
+#4 I2.AA3         400  2309. 5105.
+#5 AI.AA0         140  1076. 1741.
+#6 AI.AA3          80  1310. 2667.
+#7 IA.AA0         180   892. 1930.
+#8 IA.AA3         400   763. 1187.
+
+NRRLcommInvadeMerged %>%
+  group_by(Invader) %>%
+  summarize(medianAA = median(nAA),
+            meanAA = mean(nAA),
+            sdAA = sd(nAA))
+
+#   Invader medianAA meanAA  sdAA
+# <fct>      <dbl>  <dbl> <dbl>
+#  1 AA.0         180  1637. 4956.
+#  2 AA.3         200  1381. 3184.
+
+NRRLcommInvadeMerged %>%
+  group_by(Community) %>%
+  summarize(medianAA = median(nAA),
+            meanAA = mean(nAA),
+            sdAA = sd(nAA))
+
+#   Community medianAA meanAA  sdAA
+# <chr>        <dbl>  <dbl> <dbl>
+# 1 A1.9            10   722  1932.
+# 2 A1.PM.I2        80  1185. 2207.
+# 3 I2.9           400  3290. 7339.
+# 4 I2.PM.A1       360   814. 1511.
+
+wilcox.test(NRRLcommInvadeMerged$logAA[NRRLcommInvadeMerged$Community=="A1.9"],
+            NRRLcommInvadeMerged$logAA[NRRLcommInvadeMerged$Community=="A1.PM.I2"]) #W = 1709, p-value = 0.03018
+wilcox.test(NRRLcommInvadeMerged$logAA[NRRLcommInvadeMerged$Community=="I2.9"],
+            NRRLcommInvadeMerged$logAA[NRRLcommInvadeMerged$Community=="I2.PM.A1"]) #W = 2051, p-value = 0.3999
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1208,7 +1239,7 @@ wilcox.test(NRRLsspInvade$logCount2[NRRLsspInvade$Sp1=="PM.I2.5" & NRRLsspInvade
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-####### Figure S5
+####### Figure S6
 ####### And the in vitro data from 3-4 reps
 ####### plus the higher two AA concentration conditions from density-dep vs PF 
 # we clearly have one run of CG that's acting out (run 3, 8/3/2021) 
@@ -1326,7 +1357,7 @@ pInVitroBottom<-plot_grid(pNRRL_AA_CG_InVitroTime.P1, pNRRL_AA_CG_InVitroTime.N1
 
 pInVitroAll<-plot_grid(pInVitroTop, pInVitroBottom, ncol=1, rel_heights = c(2,1))
 pInVitroAll
-ggsave("FigS5_pInVitroAA_ALL.jpg", width=10, height=14, units="in", dpi=400)
+ggsave("FigS6_pInVitroAA_ALL.jpg", width=10, height=14, units="in", dpi=400)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
